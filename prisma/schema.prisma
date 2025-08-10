@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Minimal denormalized show fields; richer metadata fetched from TMDB and cached
+model Show {
+  /// Primary key is a composite string `${mediaType}_${tmdbId}` for simplicity
+  id             String     @id
+  tmdbId         Int
+  mediaType      MediaType
+  title          String
+  posterPath     String?
+  releaseDate    String?
+  tmdbRating     Float?
+  tmdbVoteCount  Int?
+  createdAt      DateTime   @default(now())
+
+  // Relations
+  watchlistItems Watchlist[]
+  watches        Watch[]
+  ratings        Rating[]
+
+  @@unique([tmdbId, mediaType])
+}
+
+enum MediaType {
+  MOVIE
+  TV
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  createdAt DateTime @default(now())
+
+  show      Show     @relation(fields: [showId], references: [id])
+
+  @@unique([userId, showId])
+  @@index([userId])
+}
+
+model Watch {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  watchedAt DateTime @default(now())
+
+  show      Show     @relation(fields: [showId], references: [id])
+
+  @@index([userId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  rating    Int
+  ratedAt   DateTime @default(now())
+
+  show      Show     @relation(fields: [showId], references: [id])
+
+  @@unique([userId, showId])
+  @@index([userId])
+}
