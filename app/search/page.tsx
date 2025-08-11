@@ -1,4 +1,4 @@
-import ShowCard from "@/app/features/shows/ShowCard";
+import PosterCard from "@/app/features/shows/PosterCard";
 import MediaFilters from "@/app/search/features/filters/MediaFilters";
 import SearchBox from "@/app/search/features/search_box/SearchBox";
 import {searchAll} from "@/lib/tmdb/client";
@@ -37,7 +37,7 @@ export default async function SearchPage({searchParams}: Props) {
       )}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
         {results.map((item) => (
-          <ShowCard key={item.id} show={item as MinimalShow} />
+          <PosterCard key={item.id} show={item as MinimalShow} />
         ))}
       </div>
     </div>

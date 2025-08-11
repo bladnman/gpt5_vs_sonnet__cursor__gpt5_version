@@ -1,5 +1,8 @@
 import {prisma} from "@/lib/db";
 import {getUserId} from "@/lib/session";
+import {ensureShowExists} from "@/lib/shows";
+import {getDetails} from "@/lib/tmdb/client";
+import type {TmdbMediaType} from "@/lib/tmdb/types";
 import Image from "next/image";
 import {notFound} from "next/navigation";
 
@@ -7,8 +10,18 @@ type Props = {params: Promise<{id: string}>};
 
 export default async function ShowDetailsPage({params}: Props) {
   const {id} = await params;
-  const show = await prisma.show.findUnique({where: {id}});
-  if (!show) return notFound();
+  let show = await prisma.show.findUnique({where: {id}});
+  if (!show) {
+    const [prefix, tmdbIdStr] = id.split("_");
+    const normalized = (prefix ?? "").toUpperCase();
+    const mediaType: TmdbMediaType = normalized === "MOVIE" ? "movie" : "tv";
+    const tmdbId = Number.parseInt(tmdbIdStr ?? "", 10);
+    if (!Number.isFinite(tmdbId)) return notFound();
+    const minimal = await getDetails(mediaType, tmdbId);
+    await ensureShowExists(minimal);
+    show = await prisma.show.findUnique({where: {id}});
+    if (!show) return notFound();
+  }
   const userId = await getUserId();
   const [rating, onWatchlist] = await Promise.all([
     userId

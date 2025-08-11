@@ -4,6 +4,7 @@ import {
   MinimalShow,
   TmdbMediaType,
   TmdbPagedResponseSchema,
+  TmdbShowSchema,
   toMinimalShow,
 } from "@/lib/tmdb/types";
 
@@ -87,6 +88,22 @@ export async function getNew(mediaType: TmdbMediaType): Promise<MinimalShow[]> {
   return items;
 }
 
+export async function getPagedList(
+  section: "trending" | "popular" | "now",
+  mediaType: TmdbMediaType,
+  page: number
+): Promise<{items: MinimalShow[]; page: number; totalPages?: number}> {
+  let path: string;
+  if (section === "trending") path = `/trending/${mediaType}/week`;
+  else if (section === "popular") path = `/${mediaType}/popular`;
+  else path = mediaType === "movie" ? "/movie/now_playing" : "/tv/on_the_air";
+
+  const json = await fetchTmdb(path, {page});
+  const parsed = TmdbPagedResponseSchema.parse(json);
+  const items = parsed.results.map((r) => toMinimalShow(mediaType, r));
+  return {items, page: parsed.page, totalPages: parsed.total_pages};
+}
+
 export async function searchAll(
   query: string,
   mediaType?: TmdbMediaType
@@ -111,4 +128,14 @@ export async function searchAll(
     .map((r) => toMinimalShow((r.media_type as TmdbMediaType) ?? "movie", r));
   await setCached(key, items, TTL_SECONDS.search);
   return items;
+}
+
+export async function getDetails(
+  mediaType: TmdbMediaType,
+  tmdbId: number
+): Promise<MinimalShow> {
+  const path = mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+  const json = await fetchTmdb(path);
+  const parsed = TmdbShowSchema.parse(json);
+  return toMinimalShow(mediaType, parsed);
 }
