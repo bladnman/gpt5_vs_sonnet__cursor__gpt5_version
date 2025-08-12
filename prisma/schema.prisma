@@ -79,6 +79,7 @@ model Interest {
   userId    String
   showId    String
   level     InterestLevel @default(MEDIUM)
+  waiting   Boolean  @default(false)
   createdAt DateTime @default(now())
 
   show      Show     @relation(fields: [showId], references: [id])

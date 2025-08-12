@@ -7,6 +7,7 @@ export default function WatchActions({
   onWatched,
   onClearWatched,
   onInterest,
+  onToggleWaiting,
   inWatchlist,
 }: {
   onAdd: () => Promise<void>;
@@ -14,6 +15,7 @@ export default function WatchActions({
   onWatched: () => Promise<void>;
   onClearWatched: () => Promise<void>;
   onInterest: (level: "LOW" | "MEDIUM" | "HIGH" | null) => Promise<void>;
+  onToggleWaiting: () => Promise<void>;
   inWatchlist: boolean;
 }) {
   const [isPending, start] = useTransition();
@@ -74,6 +76,13 @@ export default function WatchActions({
           aria-busy={isPending}
         >
           Clear
+        </button>
+        <button
+          className="px-2 py-1 text-xs rounded-md ring-1 ring-inset ring-[--color-border] hover:bg-[--color-muted]"
+          onClick={() => start(onToggleWaiting)}
+          aria-busy={isPending}
+        >
+          Toggle Waiting
         </button>
       </div>
     </div>

@@ -7,11 +7,12 @@ import {
   rateShow,
   removeFromWatchlist,
   setInterest,
+  setWaiting,
 } from "@/app/actions/shows";
 import PosterCard from "@/app/features/shows/PosterCard";
 import {prisma} from "@/lib/db";
 import {getUserId} from "@/lib/session";
-import {ensureShowExists} from "@/lib/shows";
+import {ensureShowExists, getUserShowStates} from "@/lib/shows";
 import {
   getDetails,
   getRecommendations,
@@ -41,14 +42,9 @@ export default async function ShowDetailsPage({params}: Props) {
     if (!show) return notFound();
   }
   const userId = await getUserId();
-  const [rating, onWatchlist, interest] = await Promise.all([
+  const [rating, interest] = await Promise.all([
     userId
       ? prisma.rating.findUnique({where: {userId_showId: {userId, showId: id}}})
-      : Promise.resolve(null),
-    userId
-      ? prisma.watchlist.findUnique({
-          where: {userId_showId: {userId, showId: id}},
-        })
       : Promise.resolve(null),
     userId
       ? prisma.interest.findUnique({
@@ -66,6 +62,30 @@ export default async function ShowDetailsPage({params}: Props) {
     getRecommendations(mediaType, tmdbId),
     getSimilar(mediaType, tmdbId),
   ]);
+  let relatedStates: Record<
+    string,
+    {
+      onWatchlist: boolean;
+      watchedAt?: string | null;
+      rating?: number | null;
+      interest?: "LOW" | "MEDIUM" | "HIGH" | null;
+    }
+  > = {};
+  if (userId) {
+    const ids = [...recs, ...similar].map((s) => s.id);
+    const state = await getUserShowStates(userId, ids);
+    relatedStates = Object.fromEntries(
+      Object.entries(state).map(([k, v]) => [
+        k,
+        {
+          onWatchlist: v.onWatchlist,
+          watchedAt: v.watchedAt ?? null,
+          rating: v.rating ?? null,
+          interest: v.interest ?? null,
+        },
+      ])
+    );
+  }
 
   return (
     <div className="pb-10">
@@ -128,16 +148,17 @@ export default async function ShowDetailsPage({params}: Props) {
                 Your rating: {rating?.rating ?? "—"}
               </span>
               <span className="opacity-80">
-                Watchlist: {onWatchlist ? "Yes" : "No"}
+                On list: {interest ? "Yes" : "No"}
               </span>
               {interest?.level && (
                 <span className="opacity-80">Interest: {interest.level}</span>
               )}
+              {interest?.waiting && <span className="opacity-80">Waiting</span>}
             </div>
             {/* Controls */}
             <div className="mt-4 flex flex-wrap gap-3 items-center">
               <WatchActions
-                inWatchlist={!!onWatchlist}
+                inWatchlist={!!interest}
                 onAdd={async () => {
                   "use server";
                   await addToWatchlist(rich);
@@ -158,6 +179,10 @@ export default async function ShowDetailsPage({params}: Props) {
                   "use server";
                   if (lvl) await setInterest(rich, lvl);
                   else await clearInterest(rich.id);
+                }}
+                onToggleWaiting={async () => {
+                  "use server";
+                  await setWaiting(rich, !interest?.waiting);
                 }}
               />
               <RatingControl
@@ -300,7 +325,7 @@ export default async function ShowDetailsPage({params}: Props) {
           <h2 className="text-xl font-semibold mb-3">Recommended</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
             {recs.slice(0, 14).map((s) => (
-              <PosterCard key={s.id} show={s} />
+              <PosterCard key={s.id} show={s} userState={relatedStates[s.id]} />
             ))}
           </div>
         </section>
@@ -310,7 +335,7 @@ export default async function ShowDetailsPage({params}: Props) {
           <h2 className="text-xl font-semibold mb-3">Similar</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
             {similar.slice(0, 14).map((s) => (
-              <PosterCard key={s.id} show={s} />
+              <PosterCard key={s.id} show={s} userState={relatedStates[s.id]} />
             ))}
           </div>
         </section>

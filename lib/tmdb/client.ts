@@ -5,6 +5,7 @@ import {
   MinimalShow,
   ShowDetails,
   TmdbCreditsSchema,
+  TmdbGenreListSchema,
   TmdbMediaType,
   TmdbPagedResponseSchema,
   TmdbShowSchema,
@@ -14,12 +15,13 @@ import {
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
-type Endpoint = "trending" | "popular" | "now" | "search";
+type Endpoint = "trending" | "popular" | "now" | "search" | "genres";
 const TTL_SECONDS: Record<Endpoint, number> = {
   trending: 10 * 60,
   popular: 10 * 60,
   now: 5 * 60,
   search: 60,
+  genres: 24 * 60 * 60,
 };
 
 async function fetchTmdb(
@@ -155,6 +157,30 @@ export async function getHomepageSections(): Promise<{
     popular: merge(popM, popT),
     now: merge(nowM, nowT),
   };
+}
+
+export async function getGenres(
+  mediaType: TmdbMediaType
+): Promise<{id: number; name: string}[]> {
+  const key = `tmdb:genres:${mediaType}`;
+  const cached = await getCached<{id: number; name: string}[]>(key);
+  if (cached) return cached;
+  const path = mediaType === "movie" ? "/genre/movie/list" : "/genre/tv/list";
+  const json = await fetchTmdb(path);
+  const parsed = TmdbGenreListSchema.parse(json);
+  await setCached(key, parsed.genres, TTL_SECONDS.genres);
+  return parsed.genres;
+}
+
+export async function getAllGenres(): Promise<{id: number; name: string}[]> {
+  const [mg, tg] = await Promise.all([getGenres("movie"), getGenres("tv")]);
+  const map = new Map<number, string>();
+  for (const g of [...mg, ...tg]) {
+    if (!map.has(g.id)) map.set(g.id, g.name);
+  }
+  return Array.from(map.entries())
+    .map(([id, name]) => ({id, name}))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getDetails(

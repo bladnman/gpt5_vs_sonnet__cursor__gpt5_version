@@ -1,10 +1,4 @@
-import {
-  addToWatchlist,
-  clearRating,
-  markWatched,
-  rateShow,
-  removeFromWatchlist,
-} from "@/app/actions/shows";
+import {clearRating, markWatched, rateShow} from "@/app/actions/shows";
 import {prisma} from "@/lib/db";
 import {getUserId} from "@/lib/session";
 import type {MinimalShow} from "@/lib/tmdb/types";
@@ -19,10 +13,6 @@ export default async function ShowCard({show}: {show: MinimalShow}) {
       where: {userId_showId: {userId, showId: show.id}},
       select: {rating: true},
     });
-  }
-  async function onWatchlist() {
-    "use server";
-    await addToWatchlist(show);
   }
   async function onWatched() {
     "use server";
@@ -64,21 +54,6 @@ export default async function ShowCard({show}: {show: MinimalShow}) {
       </figcaption>
 
       <div className="flex gap-2">
-        <form action={onWatchlist}>
-          <button className="px-2 py-1 text-sm rounded-md bg-[--color-primary] text-white">
-            + Watchlist
-          </button>
-        </form>
-        <form
-          action={async () => {
-            "use server";
-            await removeFromWatchlist(show.id);
-          }}
-        >
-          <button className="px-2 py-1 text-sm rounded-md border border-[--color-border]">
-            Remove
-          </button>
-        </form>
         <form action={onWatched}>
           <button className="px-2 py-1 text-sm rounded-md border border-[--color-border]">
             Watched

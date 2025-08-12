@@ -18,6 +18,8 @@ export const TmdbShowSchema = z.object({
   tagline: z.string().optional(),
   runtime: z.number().optional(), // movies
   episode_run_time: z.array(z.number()).optional(), // tv
+  // present in list endpoints; used for lightweight genre filtering
+  genre_ids: z.array(z.number()).optional(),
   genres: z
     .array(
       z.object({
@@ -61,6 +63,7 @@ export type MinimalShow = {
   releaseDate?: string | null;
   tmdbRating?: number | null;
   tmdbVoteCount?: number | null;
+  genreIds?: number[] | null;
 };
 
 export function toMinimalShow(
@@ -81,6 +84,7 @@ export function toMinimalShow(
     releaseDate: release ?? null,
     tmdbRating: item.vote_average ?? null,
     tmdbVoteCount: item.vote_count ?? null,
+    genreIds: item.genre_ids ?? null,
   };
 }
 
@@ -133,6 +137,17 @@ export const TmdbWatchProvidersSchema = z.object({
   ),
 });
 export type TmdbWatchProviders = z.infer<typeof TmdbWatchProvidersSchema>;
+
+// Genres list
+export const TmdbGenreListSchema = z.object({
+  genres: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+  ),
+});
+export type TmdbGenreList = z.infer<typeof TmdbGenreListSchema>;
 
 export type ShowDetails = MinimalShow & {
   overview?: string | null;

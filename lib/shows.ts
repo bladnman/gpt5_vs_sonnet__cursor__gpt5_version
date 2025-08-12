@@ -30,6 +30,7 @@ export type UserShowState = {
   watchedAt?: string | null;
   rating?: number | null;
   interest?: "LOW" | "MEDIUM" | "HIGH" | null;
+  waiting?: boolean;
 };
 
 export async function getUserShowStates(
@@ -37,8 +38,7 @@ export async function getUserShowStates(
   showIds: string[]
 ): Promise<Record<string, UserShowState>> {
   if (showIds.length === 0) return {};
-  const [watchlist, watches, ratings, interests] = await Promise.all([
-    prisma.watchlist.findMany({where: {userId, showId: {in: showIds}}}),
+  const [watches, ratings, interests] = await Promise.all([
     prisma.watch.findMany({where: {userId, showId: {in: showIds}}}),
     prisma.rating.findMany({
       where: {userId, showId: {in: showIds}},
@@ -46,7 +46,7 @@ export async function getUserShowStates(
     }),
     prisma.interest.findMany({
       where: {userId, showId: {in: showIds}},
-      select: {showId: true, level: true},
+      select: {showId: true, level: true, waiting: true},
     }),
   ]);
 
@@ -60,9 +60,6 @@ export async function getUserShowStates(
       interest: null,
     };
   }
-  for (const w of watchlist) {
-    map[w.showId].onWatchlist = true;
-  }
   for (const w of watches) {
     const dateStr = w.watchedAt?.toISOString?.() ?? null;
     map[w.showId].watchedAt = dateStr;
@@ -72,6 +69,8 @@ export async function getUserShowStates(
   }
   for (const i of interests) {
     map[i.showId].interest = i.level as UserShowState["interest"];
+    map[i.showId].waiting = (i as {waiting?: boolean}).waiting ?? false;
+    map[i.showId].onWatchlist = true; // derived from having interest
   }
   return map;
 }

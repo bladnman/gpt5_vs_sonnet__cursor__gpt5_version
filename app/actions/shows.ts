@@ -8,17 +8,19 @@ import {revalidatePath} from "next/cache";
 export async function addToWatchlist(show: MinimalShow) {
   const userId = await ensureUserId();
   await ensureShowExists(show);
-  await prisma.watchlist.upsert({
+  // Legacy: map to default interest MEDIUM
+  await prisma.interest.upsert({
     where: {userId_showId: {userId, showId: show.id}},
-    create: {userId, showId: show.id},
-    update: {},
+    create: {userId, showId: show.id, level: "MEDIUM"},
+    update: {level: "MEDIUM"},
   });
   revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }
 
 export async function removeFromWatchlist(showId: string) {
   const userId = await ensureUserId();
-  await prisma.watchlist.delete({where: {userId_showId: {userId, showId}}});
+  // Legacy: removing watchlist clears interest
+  await prisma.interest.delete({where: {userId_showId: {userId, showId}}});
   revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
 }
 
@@ -71,4 +73,15 @@ export async function clearInterest(showId: string) {
   const userId = await ensureUserId();
   await prisma.interest.delete({where: {userId_showId: {userId, showId}}});
   revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
+}
+
+export async function setWaiting(show: MinimalShow, waiting: boolean) {
+  const userId = await ensureUserId();
+  await ensureShowExists(show);
+  await prisma.interest.upsert({
+    where: {userId_showId: {userId, showId: show.id}},
+    create: {userId, showId: show.id, level: "MEDIUM", waiting},
+    update: {waiting},
+  });
+  revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }

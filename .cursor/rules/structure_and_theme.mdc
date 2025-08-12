@@ -102,13 +102,3 @@ Inside `features/`, each component gets its own `snake_case` folder containing:
 
 * **Default to Frontend:** Use client components when possible (especially for real-time API SDKs).
 * **Backend Only When Needed:** Move logic server-side for security, sensitive data, or heavy processing.
-
----
-
-This single file can be attached to any PRD request with:
-
-> “Follow the attached Always Rules for structure, naming, and theming.”
-
----
-
-If you want, I can now **merge this directly into your TV/Movie Shows PRD prompt** so it’s ready to use in one shot. Would you like me to do that?
