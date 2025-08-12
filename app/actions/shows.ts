@@ -3,6 +3,7 @@ import {prisma} from "@/lib/db";
 import {ensureUserId} from "@/lib/session";
 import {ensureShowExists} from "@/lib/shows";
 import type {MinimalShow} from "@/lib/tmdb/types";
+import {revalidatePath} from "next/cache";
 
 export async function addToWatchlist(show: MinimalShow) {
   const userId = await ensureUserId();
@@ -12,17 +13,20 @@ export async function addToWatchlist(show: MinimalShow) {
     create: {userId, showId: show.id},
     update: {},
   });
+  revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }
 
 export async function removeFromWatchlist(showId: string) {
   const userId = await ensureUserId();
   await prisma.watchlist.delete({where: {userId_showId: {userId, showId}}});
+  revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
 }
 
 export async function markWatched(show: MinimalShow) {
   const userId = await ensureUserId();
   await ensureShowExists(show);
   await prisma.watch.create({data: {userId, showId: show.id}});
+  revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }
 
 export async function rateShow(show: MinimalShow, rating: number) {
@@ -34,4 +38,5 @@ export async function rateShow(show: MinimalShow, rating: number) {
     create: {userId, showId: show.id, rating: clamped},
     update: {rating: clamped},
   });
+  revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }

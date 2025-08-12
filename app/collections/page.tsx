@@ -1,6 +1,7 @@
+import PosterCard from "@/app/features/shows/PosterCard";
 import {prisma} from "@/lib/db";
 import {getUserId} from "@/lib/session";
-import Image from "next/image";
+import type {MinimalShow} from "@/lib/tmdb/types";
 
 export const dynamic = "force-dynamic";
 
@@ -32,57 +33,35 @@ export default async function CollectionsPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Watchlist</h2>
-        <Grid items={watchlist.map((w) => w.show)} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
+          {watchlist.map((w) => (
+            <PosterCard key={w.id} show={w.show as unknown as MinimalShow} />
+          ))}
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Ratings</h2>
-        <Grid
-          items={ratings.map((r) => r.show)}
-          noteForId={(id) =>
-            ratings.find((r) => r.showId === id)?.rating?.toString()
-          }
-        />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
+          {ratings.map((r) => (
+            <div key={r.id} className="flex flex-col gap-1">
+              <PosterCard show={r.show as unknown as MinimalShow} />
+              <div className="text-xs opacity-80">Your rating: {r.rating}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">History</h2>
-        <Grid items={history.map((h) => h.show)} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
+          {history.map((h) => (
+            <PosterCard key={h.id} show={h.show as unknown as MinimalShow} />
+          ))}
+        </div>
       </section>
     </div>
   );
 }
 
-function Grid({
-  items,
-  noteForId,
-}: {
-  items: {id: string; title: string; posterPath: string | null}[];
-  noteForId?: (id: string) => string | undefined;
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-      {items.map((item) => (
-        <figure key={item.id} className="flex flex-col gap-2">
-          {item.posterPath ? (
-            <Image
-              src={`https://image.tmdb.org/t/p/w342${item.posterPath}`}
-              alt={item.title}
-              width={228}
-              height={342}
-              className="rounded-md border border-[--color-border]"
-            />
-          ) : (
-            <div className="w-[228px] h-[342px] rounded-md bg-[--color-muted]" />
-          )}
-          <figcaption className="text-sm">
-            {item.title}
-            {noteForId?.(item.id) ? (
-              <span className="opacity-70"> • {noteForId(item.id)}</span>
-            ) : null}
-          </figcaption>
-        </figure>
-      ))}
-    </div>
-  );
-}
+// simplified: reuse PosterCard for consistent styling

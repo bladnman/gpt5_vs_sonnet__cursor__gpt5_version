@@ -19,7 +19,7 @@ export default function PosterCard({show, className, href}: Props) {
       className={["group block", className ?? ""].join(" ")}
       aria-label={show.title}
     >
-      <div className="relative w-full aspect-[2/3] overflow-hidden rounded-md border border-[--color-border] bg-[--color-muted]">
+      <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg bg-[--color-muted] shadow-sm ring-1 ring-inset ring-[--color-border]">
         {imageSrc ? (
           <Image
             src={imageSrc}
@@ -34,7 +34,7 @@ export default function PosterCard({show, className, href}: Props) {
         )}
 
         {typeof show.tmdbRating === "number" && (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 text-xs rounded bg-black/70 backdrop-blur text-white border border-white/10">
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 text-xs rounded-md bg-black/65 backdrop-blur text-white ring-1 ring-white/15">
             ★ {show.tmdbRating.toFixed(1)}
           </div>
         )}

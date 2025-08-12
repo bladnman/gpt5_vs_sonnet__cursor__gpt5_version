@@ -1,10 +1,14 @@
 import {getCached, setCached} from "@/lib/cache";
 import {env} from "@/lib/env";
+import type {TmdbWatchProviders} from "@/lib/tmdb/types";
 import {
   MinimalShow,
+  ShowDetails,
+  TmdbCreditsSchema,
   TmdbMediaType,
   TmdbPagedResponseSchema,
   TmdbShowSchema,
+  TmdbWatchProvidersSchema,
   toMinimalShow,
 } from "@/lib/tmdb/types";
 
@@ -130,6 +134,29 @@ export async function searchAll(
   return items;
 }
 
+// Combined popular/trending/now for homepage: returns a map keyed by section
+export async function getHomepageSections(): Promise<{
+  trending: MinimalShow[];
+  popular: MinimalShow[];
+  now: MinimalShow[];
+}> {
+  const [trM, trT, popM, popT, nowM, nowT] = await Promise.all([
+    getTrending("movie"),
+    getTrending("tv"),
+    getPopular("movie"),
+    getPopular("tv"),
+    getNew("movie"),
+    getNew("tv"),
+  ]);
+  const merge = (a: MinimalShow[], b: MinimalShow[]) =>
+    [...a, ...b].sort((x, y) => (y.tmdbRating ?? 0) - (x.tmdbRating ?? 0));
+  return {
+    trending: merge(trM, trT),
+    popular: merge(popM, popT),
+    now: merge(nowM, nowT),
+  };
+}
+
 export async function getDetails(
   mediaType: TmdbMediaType,
   tmdbId: number
@@ -138,4 +165,135 @@ export async function getDetails(
   const json = await fetchTmdb(path);
   const parsed = TmdbShowSchema.parse(json);
   return toMinimalShow(mediaType, parsed);
+}
+
+// Rich details including overview, credits, seasons, providers
+export async function getRichDetails(
+  mediaType: TmdbMediaType,
+  tmdbId: number,
+  region: string = "US"
+): Promise<ShowDetails> {
+  const base = mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+  const [detailsJson, creditsJson, providersJson] = await Promise.all([
+    fetchTmdb(base),
+    fetchTmdb(`${base}/credits`),
+    fetchTmdb(`${base}/watch/providers`),
+  ]);
+  const details = TmdbShowSchema.parse(detailsJson);
+  const minimal = toMinimalShow(mediaType, details);
+  const credits = TmdbCreditsSchema.parse(creditsJson);
+  const providers = TmdbWatchProvidersSchema.parse(
+    providersJson
+  ) as TmdbWatchProviders;
+  const resultsMap = (providers.results ?? {}) as Record<
+    string,
+    {
+      link?: string;
+      flatrate?: {
+        provider_id: number;
+        provider_name: string;
+        logo_path?: string | null;
+      }[];
+      buy?: {
+        provider_id: number;
+        provider_name: string;
+        logo_path?: string | null;
+      }[];
+      rent?: {
+        provider_id: number;
+        provider_name: string;
+        logo_path?: string | null;
+      }[];
+    }
+  >;
+  const regionData = resultsMap[region];
+  return {
+    ...minimal,
+    overview: details.overview ?? null,
+    tagline: details.tagline ?? null,
+    genres: details.genres,
+    runtimeMinutes: details.runtime ?? null,
+    episodeRunTimeMinutes:
+      details.episode_run_time && details.episode_run_time.length > 0
+        ? Math.round(
+            details.episode_run_time.reduce((a, b) => a + b, 0) /
+              details.episode_run_time.length
+          )
+        : null,
+    numberOfSeasons: details.number_of_seasons ?? null,
+    numberOfEpisodes: details.number_of_episodes ?? null,
+    seasons:
+      details.seasons?.map((s) => ({
+        id: s.id,
+        name: s.name,
+        seasonNumber: s.season_number,
+        episodeCount: s.episode_count,
+        airDate: s.air_date ?? null,
+        posterPath: s.poster_path ?? null,
+      })) ?? [],
+    cast:
+      credits.cast?.map((c) => ({
+        id: c.id,
+        name: c.name,
+        character: c.character,
+        profilePath: c.profile_path ?? null,
+      })) ?? [],
+    crew:
+      credits.crew?.map((c) => ({
+        id: c.id,
+        name: c.name,
+        job: c.job,
+        profilePath: c.profile_path ?? null,
+      })) ?? [],
+    providers: regionData
+      ? {
+          link: regionData.link,
+          region,
+          flatrate:
+            regionData.flatrate?.map((p) => ({
+              id: p.provider_id,
+              name: p.provider_name,
+              logoPath: p.logo_path ?? null,
+            })) ?? [],
+          buy:
+            regionData.buy?.map((p) => ({
+              id: p.provider_id,
+              name: p.provider_name,
+              logoPath: p.logo_path ?? null,
+            })) ?? [],
+          rent:
+            regionData.rent?.map((p) => ({
+              id: p.provider_id,
+              name: p.provider_name,
+              logoPath: p.logo_path ?? null,
+            })) ?? [],
+        }
+      : undefined,
+  };
+}
+
+export async function getRecommendations(
+  mediaType: TmdbMediaType,
+  tmdbId: number
+): Promise<MinimalShow[]> {
+  const path =
+    mediaType === "movie"
+      ? `/movie/${tmdbId}/recommendations`
+      : `/tv/${tmdbId}/recommendations`;
+  const json = await fetchTmdb(path);
+  const parsed = TmdbPagedResponseSchema.parse(json);
+  return parsed.results.map((r) => toMinimalShow(mediaType, r));
+}
+
+export async function getSimilar(
+  mediaType: TmdbMediaType,
+  tmdbId: number
+): Promise<MinimalShow[]> {
+  const path =
+    mediaType === "movie"
+      ? `/movie/${tmdbId}/similar`
+      : `/tv/${tmdbId}/similar`;
+  const json = await fetchTmdb(path);
+  const parsed = TmdbPagedResponseSchema.parse(json);
+  return parsed.results.map((r) => toMinimalShow(mediaType, r));
 }

@@ -13,7 +13,7 @@ export default function MediaTabs({active}: {active: Media}) {
   };
 
   return (
-    <div className="inline-flex rounded-md border border-[--color-border] p-1 bg-[--color-muted]">
+    <div className="inline-flex rounded-full ring-1 ring-inset ring-[--color-border] p-0.5 bg-[--color-background]">
       {(["movie", "tv"] as const).map((m) => {
         const isActive = m === active;
         return (
@@ -21,10 +21,8 @@ export default function MediaTabs({active}: {active: Media}) {
             key={m}
             onClick={() => router.push(makeHref(m))}
             className={[
-              "px-3 py-1.5 text-sm rounded-md",
-              isActive
-                ? "bg-[--color-background] border border-[--color-border]"
-                : "opacity-80 hover:opacity-100",
+              "px-3 py-1 text-xs rounded-full",
+              isActive ? "bg-[--color-muted]" : "opacity-80 hover:opacity-100",
             ].join(" ")}
             aria-current={isActive ? "page" : undefined}
           >
