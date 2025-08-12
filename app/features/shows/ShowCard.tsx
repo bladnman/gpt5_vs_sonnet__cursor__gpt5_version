@@ -1,5 +1,6 @@
 import {
   addToWatchlist,
+  clearRating,
   markWatched,
   rateShow,
   removeFromWatchlist,
@@ -29,7 +30,12 @@ export default async function ShowCard({show}: {show: MinimalShow}) {
   }
   async function onRate(formData: FormData) {
     "use server";
-    const value = Number(formData.get("rating"));
+    const valueRaw = formData.get("rating");
+    if (valueRaw === "clear") {
+      await clearRating(show.id);
+      return;
+    }
+    const value = Number(valueRaw);
     if (Number.isFinite(value)) {
       await rateShow(show, value);
     }
@@ -81,16 +87,19 @@ export default async function ShowCard({show}: {show: MinimalShow}) {
       </div>
       <form action={onRate} className="flex items-center gap-2">
         <label className="text-xs opacity-80">Rate</label>
-        <input
-          type="number"
+        <select
           name="rating"
-          min={1}
-          max={10}
-          defaultValue={
-            existingRating?.rating ?? Math.round((show.tmdbRating ?? 0) / 1)
-          }
-          className="w-16 px-2 py-1 text-sm rounded-md bg-[--color-muted] border border-[--color-border]"
-        />
+          defaultValue={existingRating?.rating?.toString() ?? ""}
+          className="px-2 py-1 text-sm rounded-md bg-[--color-muted] border border-[--color-border]"
+        >
+          <option value="">—</option>
+          {Array.from({length: 10}).map((_, i) => (
+            <option key={i + 1} value={String(i + 1)}>
+              {i + 1}
+            </option>
+          ))}
+          <option value="clear">Clear</option>
+        </select>
         <button className="px-2 py-1 text-sm rounded-md border border-[--color-border]">
           Save
         </button>

@@ -29,6 +29,12 @@ export async function markWatched(show: MinimalShow) {
   revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
 }
 
+export async function clearWatched(showId: string) {
+  const userId = await ensureUserId();
+  await prisma.watch.deleteMany({where: {userId, showId}});
+  revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
+}
+
 export async function rateShow(show: MinimalShow, rating: number) {
   const userId = await ensureUserId();
   await ensureShowExists(show);
@@ -39,4 +45,30 @@ export async function rateShow(show: MinimalShow, rating: number) {
     update: {rating: clamped},
   });
   revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
+}
+
+export async function clearRating(showId: string) {
+  const userId = await ensureUserId();
+  await prisma.rating.delete({where: {userId_showId: {userId, showId}}});
+  revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
+}
+
+export async function setInterest(
+  show: MinimalShow,
+  level: "LOW" | "MEDIUM" | "HIGH"
+) {
+  const userId = await ensureUserId();
+  await ensureShowExists(show);
+  await prisma.interest.upsert({
+    where: {userId_showId: {userId, showId: show.id}},
+    create: {userId, showId: show.id, level},
+    update: {level},
+  });
+  revalidatePath(`/show-details/${encodeURIComponent(show.id)}`);
+}
+
+export async function clearInterest(showId: string) {
+  const userId = await ensureUserId();
+  await prisma.interest.delete({where: {userId_showId: {userId, showId}}});
+  revalidatePath(`/show-details/${encodeURIComponent(showId)}`);
 }

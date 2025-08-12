@@ -1,8 +1,12 @@
 import {
   addToWatchlist,
+  clearInterest,
+  clearRating,
+  clearWatched,
   markWatched,
   rateShow,
   removeFromWatchlist,
+  setInterest,
 } from "@/app/actions/shows";
 import PosterCard from "@/app/features/shows/PosterCard";
 import {prisma} from "@/lib/db";
@@ -37,12 +41,17 @@ export default async function ShowDetailsPage({params}: Props) {
     if (!show) return notFound();
   }
   const userId = await getUserId();
-  const [rating, onWatchlist] = await Promise.all([
+  const [rating, onWatchlist, interest] = await Promise.all([
     userId
       ? prisma.rating.findUnique({where: {userId_showId: {userId, showId: id}}})
       : Promise.resolve(null),
     userId
       ? prisma.watchlist.findUnique({
+          where: {userId_showId: {userId, showId: id}},
+        })
+      : Promise.resolve(null),
+    userId
+      ? prisma.interest.findUnique({
           where: {userId_showId: {userId, showId: id}},
         })
       : Promise.resolve(null),
@@ -121,6 +130,9 @@ export default async function ShowDetailsPage({params}: Props) {
               <span className="opacity-80">
                 Watchlist: {onWatchlist ? "Yes" : "No"}
               </span>
+              {interest?.level && (
+                <span className="opacity-80">Interest: {interest.level}</span>
+              )}
             </div>
             {/* Controls */}
             <div className="mt-4 flex flex-wrap gap-3 items-center">
@@ -138,12 +150,25 @@ export default async function ShowDetailsPage({params}: Props) {
                   "use server";
                   await markWatched(rich);
                 }}
+                onClearWatched={async () => {
+                  "use server";
+                  await clearWatched(rich.id);
+                }}
+                onInterest={async (lvl) => {
+                  "use server";
+                  if (lvl) await setInterest(rich, lvl);
+                  else await clearInterest(rich.id);
+                }}
               />
               <RatingControl
                 initial={rating?.rating ?? null}
                 onSave={async (value) => {
                   "use server";
                   await rateShow(rich, value);
+                }}
+                onClear={async () => {
+                  "use server";
+                  await clearRating(rich.id);
                 }}
               />
             </div>

@@ -27,7 +27,11 @@ export default async function HistoryPage() {
       <h1 className="text-2xl font-bold">History</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
         {items.map((i) => (
-          <PosterCard key={i.id} show={i.show as unknown as MinimalShow} />
+          <PosterCard
+            key={i.id}
+            show={i.show as unknown as MinimalShow}
+            userState={{watchedAt: i.watchedAt.toISOString()}}
+          />
         ))}
       </div>
     </div>

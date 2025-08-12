@@ -27,6 +27,7 @@ model Show {
   watchlistItems Watchlist[]
   watches        Watch[]
   ratings        Rating[]
+  interests      Interest[]
 
   @@unique([tmdbId, mediaType])
 }
@@ -70,4 +71,24 @@ model Rating {
 
   @@unique([userId, showId])
   @@index([userId])
+}
+
+/// Optional user-declared interest level for a show (separate from watchlist)
+model Interest {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  level     InterestLevel @default(MEDIUM)
+  createdAt DateTime @default(now())
+
+  show      Show     @relation(fields: [showId], references: [id])
+
+  @@unique([userId, showId])
+  @@index([userId])
+}
+
+enum InterestLevel {
+  LOW
+  MEDIUM
+  HIGH
 }
