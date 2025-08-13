@@ -4,8 +4,6 @@ import {getUserShowStates} from "@/lib/shows";
 import {getHomepageSections} from "@/lib/tmdb/client";
 import type {MinimalShow} from "@/lib/tmdb/types";
 
-type Props = Record<string, never>;
-
 export default async function DiscoveryLists({
   searchParams,
 }: {

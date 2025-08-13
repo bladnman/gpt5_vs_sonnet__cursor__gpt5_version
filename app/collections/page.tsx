@@ -1,4 +1,5 @@
-import PosterCard from "@/app/features/shows/PosterCard";
+import CollectionsHeader from "@/app/collections/features/header/CollectionsHeader";
+import Section from "@/app/collections/features/section/Section";
 import {prisma} from "@/lib/db";
 import {getUserId} from "@/lib/session";
 import type {MinimalShow} from "@/lib/tmdb/types";
@@ -10,7 +11,7 @@ export default async function CollectionsPage() {
   if (!userId) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold">Your Collections</h1>
+        <CollectionsHeader />
         <p className="opacity-80 mt-2">
           Sign in or perform an action to create a session.
         </p>
@@ -29,37 +30,28 @@ export default async function CollectionsPage() {
 
   return (
     <div className="p-6 flex flex-col gap-10">
-      <h1 className="text-2xl font-bold">Your Collections</h1>
+      <CollectionsHeader />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Watchlist</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-          {watchlist.map((w) => (
-            <PosterCard key={w.id} show={w.show as unknown as MinimalShow} />
-          ))}
-        </div>
-      </section>
+      <Section
+        title="Watchlist"
+        items={watchlist.map((w) => w.show as unknown as MinimalShow)}
+      />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Ratings</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-          {ratings.map((r) => (
-            <div key={r.id} className="flex flex-col gap-1">
-              <PosterCard show={r.show as unknown as MinimalShow} />
-              <div className="text-xs opacity-80">Your rating: {r.rating}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <Section
+        title="Ratings"
+        items={ratings.map((r) => r.show as unknown as MinimalShow)}
+        footer={(item) => {
+          const r = ratings.find(
+            (x) => (x.show as unknown as MinimalShow).id === item.id
+          );
+          return r ? `Your rating: ${r.rating}` : null;
+        }}
+      />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">History</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-          {history.map((h) => (
-            <PosterCard key={h.id} show={h.show as unknown as MinimalShow} />
-          ))}
-        </div>
-      </section>
+      <Section
+        title="History"
+        items={history.map((h) => h.show as unknown as MinimalShow)}
+      />
     </div>
   );
 }

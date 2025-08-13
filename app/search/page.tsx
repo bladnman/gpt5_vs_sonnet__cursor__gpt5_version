@@ -1,8 +1,8 @@
-import PosterCard from "@/app/features/shows/PosterCard";
 import MediaFilters from "@/app/search/features/filters/MediaFilters";
+import SearchGrid from "@/app/search/features/grid/SearchGrid";
+import SearchHeader from "@/app/search/features/header/SearchHeader";
 import SearchBox from "@/app/search/features/search_box/SearchBox";
-import {searchAll} from "@/lib/tmdb/client";
-import type {MinimalShow, TmdbMediaType} from "@/lib/tmdb/types";
+import use_search_results from "@/app/search/hooks/use_search_results";
 
 export const dynamic = "force-dynamic";
 
@@ -12,20 +12,11 @@ type Props = {
 
 export default async function SearchPage({searchParams}: Props) {
   const params = await searchParams;
-  const qParam = Array.isArray(params.q) ? params.q[0] : params.q;
-  const q = qParam?.trim() ?? "";
-  const mediaParam = Array.isArray(params.media)
-    ? params.media[0]
-    : params.media;
-  const media: TmdbMediaType | undefined =
-    mediaParam === "movie" || mediaParam === "tv"
-      ? (mediaParam as TmdbMediaType)
-      : undefined;
-  const results = q ? await searchAll(q, media) : [];
+  const {q, items} = await use_search_results(params);
 
   return (
     <div className="p-6 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Search</h1>
+      <SearchHeader />
       <div className="flex items-center gap-3">
         <SearchBox />
         <MediaFilters />
@@ -35,11 +26,7 @@ export default async function SearchPage({searchParams}: Props) {
           Results for “{q}”
         </p>
       )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-        {results.map((item) => (
-          <PosterCard key={item.id} show={item as MinimalShow} />
-        ))}
-      </div>
+      <SearchGrid items={items} />
     </div>
   );
 }

@@ -1,4 +1,6 @@
-import PosterCard from "@/app/features/shows/PosterCard";
+import Pagination from "@/app/discovery/[media]/[section]/features/pagination/Pagination";
+import SectionGrid from "@/app/discovery/[media]/[section]/features/section_grid/SectionGrid";
+import SectionHeader from "@/app/discovery/[media]/[section]/features/section_header/SectionHeader";
 import {getPagedList} from "@/lib/tmdb/client";
 import type {MinimalShow, TmdbMediaType} from "@/lib/tmdb/types";
 
@@ -31,30 +33,9 @@ export default async function SectionIndex({params, searchParams}: Props) {
 
   return (
     <div className="p-6 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">{titleMap[sectionKey]}</h1>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-        {items.map((item) => (
-          <PosterCard key={item.id} show={item as MinimalShow} />
-        ))}
-      </div>
-      <nav className="flex items-center justify-center gap-3">
-        {page > 1 && (
-          <a
-            className="px-3 py-1 rounded-md border border-[--color-border]"
-            href={`${basePath}?page=${page - 1}`}
-          >
-            Previous
-          </a>
-        )}
-        {totalPages && page < totalPages && (
-          <a
-            className="px-3 py-1 rounded-md border border-[--color-border]"
-            href={`${basePath}?page=${page + 1}`}
-          >
-            Next
-          </a>
-        )}
-      </nav>
+      <SectionHeader title={titleMap[sectionKey]} />
+      <SectionGrid items={items as MinimalShow[]} />
+      <Pagination basePath={basePath} page={page} totalPages={totalPages} />
     </div>
   );
 }

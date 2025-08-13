@@ -39,6 +39,8 @@ Each route has its own folder inside `/app`, containing:
 
 ### 3.3. Feature-Level
 
+The concept of a `feature` is a component that is used inside a page or other feature (component). This is critical to understand when creating new components. This will create a cascade of `/feature` folders inside of each page, feature, and component. This allows for the "localization" of components, hooks, and utilities that are specific to a page or feature. This is critical to maintain a mental model of the project and to avoid creating a "spaghetti" of components.
+
 Inside `features/`, each component gets its own `snake_case` folder containing:
 
 ```
