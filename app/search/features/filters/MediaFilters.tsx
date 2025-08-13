@@ -1,4 +1,5 @@
 "use client";
+import MediaToggleButton from "@/app/search/features/filters/components/MediaToggleButton";
 import {useRouter, useSearchParams} from "next/navigation";
 
 export default function MediaFilters() {
@@ -14,25 +15,26 @@ export default function MediaFilters() {
     router.push(`/search?${usp.toString()}`);
   }
 
-  const Button = ({value, label}: {value: string; label: string}) => (
-    <button
-      onClick={() => setMedia(value)}
-      className={`px-3 py-1 rounded-md border ${
-        media === value
-          ? "bg-[--color-primary] text-white"
-          : "border-[--color-border]"
-      }`}
-      aria-pressed={media === value}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="flex gap-2">
-      <Button value="multi" label="All" />
-      <Button value="movie" label="Movies" />
-      <Button value="tv" label="TV" />
+      <MediaToggleButton
+        value="multi"
+        label="All"
+        active={media === "multi"}
+        onClick={setMedia}
+      />
+      <MediaToggleButton
+        value="movie"
+        label="Movies"
+        active={media === "movie"}
+        onClick={setMedia}
+      />
+      <MediaToggleButton
+        value="tv"
+        label="TV"
+        active={media === "tv"}
+        onClick={setMedia}
+      />
     </div>
   );
 }

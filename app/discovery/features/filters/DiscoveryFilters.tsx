@@ -1,4 +1,6 @@
 "use client";
+import GenrePill from "@/app/discovery/features/filters/components/GenrePill";
+import SegmentButton from "@/app/discovery/features/filters/components/SegmentButton";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useMemo} from "react";
 
@@ -61,21 +63,7 @@ export default function DiscoveryFilters({genres}: Props) {
           ? order === value
           : interest === value;
     const onClick = () => setParam(group, active ? null : value);
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={[
-          "px-3 py-1 text-xs rounded-full border",
-          active
-            ? "bg-[--color-muted] border-[--color-border]"
-            : "opacity-80 hover:opacity-100 border-[--color-border]",
-        ].join(" ")}
-        aria-pressed={active}
-      >
-        {label}
-      </button>
-    );
+    return <SegmentButton label={label} active={active} onClick={onClick} />;
   };
 
   return (
@@ -118,25 +106,14 @@ export default function DiscoveryFilters({genres}: Props) {
       </div>
 
       <div className="flex flex-wrap gap-1 max-w-[70vw] justify-end">
-        {genres.map((g) => {
-          const active = selectedGenres.has(g.id);
-          return (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => toggleGenre(g.id)}
-              className={[
-                "px-2 py-0.5 text-xs rounded-full border",
-                active
-                  ? "bg-[--color-muted] border-[--color-border]"
-                  : "opacity-80 hover:opacity-100 border-[--color-border]",
-              ].join(" ")}
-              aria-pressed={active}
-            >
-              {g.name}
-            </button>
-          );
-        })}
+        {genres.map((g) => (
+          <GenrePill
+            key={g.id}
+            label={g.name}
+            active={selectedGenres.has(g.id)}
+            onClick={() => toggleGenre(g.id)}
+          />
+        ))}
       </div>
     </div>
   );
