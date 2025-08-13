@@ -3,8 +3,9 @@ import {defineConfig, devices} from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  reporter: [["html", {outputFolder: "playwright-report", open: "never"}]],
   use: {
-    baseURL: "http://localhost:4000",
+    baseURL: "http://localhost:4100",
     trace: "on-first-retry",
   },
   projects: [
@@ -14,8 +15,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:4000",
+    command: "next dev -p 4100",
+    url: "http://localhost:4100",
     reuseExistingServer: !process.env.CI,
     env: {
       DATABASE_URL: "file:./prisma/dev.db",
