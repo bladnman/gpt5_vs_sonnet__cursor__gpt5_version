@@ -28,6 +28,64 @@ async function fetchTmdb(
   path: string,
   params: Record<string, string | number> = {}
 ): Promise<unknown> {
+  // Test/E2E fallback to avoid hitting external TMDB during CI/dev
+  if (process.env.MOCK_TMDB === "1") {
+    // Provide minimal JSON shapes when parsed by zod schemas
+    if (path.includes("/credits")) {
+      return {cast: [], crew: []};
+    }
+    if (path.endsWith("/watch/providers")) {
+      return {results: {US: {link: "", flatrate: [], buy: [], rent: []}}};
+    }
+    // Generic paged list response
+    if (
+      /^\/trending\//.test(path) ||
+      /\/popular$/.test(path) ||
+      /search\//.test(path) ||
+      /now_playing$/.test(path) ||
+      /on_the_air$/.test(path)
+    ) {
+      return {page: 1, total_pages: 1, results: []};
+    }
+    if (/^\/genre\//.test(path)) {
+      return {genres: []};
+    }
+    // Movie/TV details minimal
+    if (/^\/(movie|tv)\//.test(path)) {
+      const tmdbId = Number(path.split("/")[2] ?? 1);
+      const isMovie = path.startsWith("/movie/");
+      return {
+        id: tmdbId,
+        title: isMovie ? "Mock Movie" : undefined,
+        name: isMovie ? undefined : "Mock TV",
+        poster_path: null,
+        release_date: "2024-01-01",
+        first_air_date: "2024-01-01",
+        vote_average: 7.0,
+        vote_count: 100,
+        overview: "",
+        tagline: "",
+        runtime: isMovie ? 120 : undefined,
+        episode_run_time: isMovie ? undefined : [45],
+        number_of_seasons: isMovie ? undefined : 1,
+        number_of_episodes: isMovie ? undefined : 10,
+        genres: [],
+        backdrop_path: null,
+        seasons: isMovie
+          ? []
+          : [
+              {
+                id: 1,
+                name: "S1",
+                season_number: 1,
+                episode_count: 10,
+                air_date: "2024-01-01",
+                poster_path: null,
+              },
+            ],
+      };
+    }
+  }
   const url = new URL(`${TMDB_BASE_URL}${path}`);
   // If a v3 key is provided, send it as api_key param (compatible mode).
   if (env.TMDB_API_KEY) {
@@ -58,6 +116,7 @@ async function fetchTmdb(
 export async function getTrending(
   mediaType: TmdbMediaType
 ): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const key = `tmdb:trending:${mediaType}`;
   const cached = await getCached<MinimalShow[]>(key);
   if (cached) return cached;
@@ -72,6 +131,7 @@ export async function getTrending(
 export async function getPopular(
   mediaType: TmdbMediaType
 ): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const key = `tmdb:popular:${mediaType}`;
   const cached = await getCached<MinimalShow[]>(key);
   if (cached) return cached;
@@ -83,6 +143,7 @@ export async function getPopular(
 }
 
 export async function getNew(mediaType: TmdbMediaType): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const key = `tmdb:new:${mediaType}`;
   const cached = await getCached<MinimalShow[]>(key);
   if (cached) return cached;
@@ -99,6 +160,7 @@ export async function getPagedList(
   mediaType: TmdbMediaType,
   page: number
 ): Promise<{items: MinimalShow[]; page: number; totalPages?: number}> {
+  if (process.env.MOCK_TMDB === "1") return {items: [], page: 1, totalPages: 1};
   let path: string;
   if (section === "trending") path = `/trending/${mediaType}/week`;
   else if (section === "popular") path = `/${mediaType}/popular`;
@@ -114,6 +176,7 @@ export async function searchAll(
   query: string,
   mediaType?: TmdbMediaType
 ): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const q = query.trim();
   if (!q) return [];
   const key = `tmdb:search:${mediaType ?? "multi"}:${q.toLowerCase()}`;
@@ -142,6 +205,8 @@ export async function getHomepageSections(): Promise<{
   popular: MinimalShow[];
   now: MinimalShow[];
 }> {
+  if (process.env.MOCK_TMDB === "1")
+    return {trending: [], popular: [], now: []};
   const [trM, trT, popM, popT, nowM, nowT] = await Promise.all([
     getTrending("movie"),
     getTrending("tv"),
@@ -162,6 +227,7 @@ export async function getHomepageSections(): Promise<{
 export async function getGenres(
   mediaType: TmdbMediaType
 ): Promise<{id: number; name: string}[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const key = `tmdb:genres:${mediaType}`;
   const cached = await getCached<{id: number; name: string}[]>(key);
   if (cached) return cached;
@@ -173,6 +239,7 @@ export async function getGenres(
 }
 
 export async function getAllGenres(): Promise<{id: number; name: string}[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const [mg, tg] = await Promise.all([getGenres("movie"), getGenres("tv")]);
   const map = new Map<number, string>();
   for (const g of [...mg, ...tg]) {
@@ -187,6 +254,21 @@ export async function getDetails(
   mediaType: TmdbMediaType,
   tmdbId: number
 ): Promise<MinimalShow> {
+  if (process.env.MOCK_TMDB === "1") {
+    return toMinimalShow(mediaType, {
+      id: tmdbId,
+      title: mediaType === "movie" ? "Mock Movie" : undefined,
+      name: mediaType === "tv" ? "Mock TV" : undefined,
+      poster_path: null,
+      release_date: "2024-01-01",
+      first_air_date: "2024-01-01",
+      vote_average: 7,
+      vote_count: 100,
+      overview: "",
+      backdrop_path: null,
+      genres: [],
+    } as any);
+  }
   const path = mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
   const json = await fetchTmdb(path);
   const parsed = TmdbShowSchema.parse(json);
@@ -199,6 +281,34 @@ export async function getRichDetails(
   tmdbId: number,
   region: string = "US"
 ): Promise<ShowDetails> {
+  if (process.env.MOCK_TMDB === "1") {
+    const minimal = await getDetails(mediaType, tmdbId);
+    return {
+      ...minimal,
+      overview: "",
+      tagline: "",
+      genres: [],
+      runtimeMinutes: mediaType === "movie" ? 120 : null,
+      episodeRunTimeMinutes: mediaType === "tv" ? 45 : null,
+      numberOfSeasons: mediaType === "tv" ? 1 : null,
+      numberOfEpisodes: mediaType === "tv" ? 10 : null,
+      seasons:
+        mediaType === "tv"
+          ? [
+              {
+                id: 1,
+                name: "S1",
+                seasonNumber: 1,
+                episodeCount: 10,
+                posterPath: null,
+              },
+            ]
+          : [],
+      cast: [],
+      crew: [],
+      providers: {region, link: "", flatrate: [], buy: [], rent: []},
+    } as any;
+  }
   const base = mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
   const [detailsJson, creditsJson, providersJson] = await Promise.all([
     fetchTmdb(base),
@@ -302,6 +412,7 @@ export async function getRecommendations(
   mediaType: TmdbMediaType,
   tmdbId: number
 ): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const path =
     mediaType === "movie"
       ? `/movie/${tmdbId}/recommendations`
@@ -315,6 +426,7 @@ export async function getSimilar(
   mediaType: TmdbMediaType,
   tmdbId: number
 ): Promise<MinimalShow[]> {
+  if (process.env.MOCK_TMDB === "1") return [];
   const path =
     mediaType === "movie"
       ? `/movie/${tmdbId}/similar`
