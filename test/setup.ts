@@ -11,7 +11,8 @@ vi.mock("next/image", () => ({
 }));
 
 // JSDOM does not implement scrollTo
-// @ts-expect-error add stub
+// Provide a stub for scrollTo not implemented by JSDOM
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 window.scrollTo = () => {};
 
 afterEach(() => {

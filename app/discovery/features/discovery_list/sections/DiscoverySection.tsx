@@ -27,7 +27,7 @@ export default function DiscoverySection({
         <h2 className="text-xl font-semibold">{title}</h2>
         <SeeAllLink section={sectionKey} />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {items.map((item) => (
           <PosterCard key={item.id} show={item} userState={stateMap[item.id]} />
         ))}

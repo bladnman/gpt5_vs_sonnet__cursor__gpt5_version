@@ -1,5 +1,6 @@
-import DiscoveryLists from "@/app/discovery/features/discovery_list/DiscoveryLists";
-import DiscoveryHeader from "@/app/discovery/features/header/DiscoveryHeader";
+import DiscoveryLists from "./features/discovery_list/DiscoveryLists";
+import DiscoveryHeader from "./features/header/DiscoveryHeader";
+import HeroCarousel from "./features/header/HeroCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,11 @@ type Props = {
 export default async function DiscoveryPage({searchParams}: Props) {
   const sp = await searchParams;
   return (
-    <div className="p-6 flex flex-col gap-6">
-      <DiscoveryHeader />
+    <div className="p-0 flex flex-col gap-6">
+      <HeroCarousel />
+      <div className="px-6">
+        <DiscoveryHeader />
+      </div>
       <DiscoveryLists searchParams={sp} />
     </div>
   );

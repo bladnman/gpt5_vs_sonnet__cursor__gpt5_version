@@ -61,8 +61,8 @@ export default async function PosterCard({
 
         {/* TMDB rating badge (non-navigating) */}
         {typeof show.tmdbRating === "number" && (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 text-xs rounded-md bg-black/65 backdrop-blur text-white ring-1 ring-white/15">
-            ★ {show.tmdbRating.toFixed(1)}
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 text-xs rounded-md bg-[--color-primary] text-white ring-1 ring-white/10">
+            {show.tmdbRating.toFixed(1)}
           </div>
         )}
 
@@ -100,7 +100,7 @@ export default async function PosterCard({
       </div>
 
       {/* Quick Edit lightweight sheet (outside overflow, so not clipped) */}
-      <div className="absolute top-2 right-2 z-20">
+      <div className="absolute top-2 left-2 z-20">
         <QuickActions
           show={show}
           onWatchlist={onWatchlist}

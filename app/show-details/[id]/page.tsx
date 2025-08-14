@@ -41,11 +41,15 @@ export default async function ShowDetailsPage({params}: Props) {
 
         {/* Discovery under details */}
         <RelatedGrid
-          title="Recommended"
+          title="Recommended Shows"
           items={recs}
           stateMap={relatedStates}
         />
-        <RelatedGrid title="Similar" items={similar} stateMap={relatedStates} />
+        <RelatedGrid
+          title="Similar Shows"
+          items={similar}
+          stateMap={relatedStates}
+        />
       </div>
     );
   } catch {
