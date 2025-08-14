@@ -30,14 +30,14 @@ export default async function ShowDetailsPage({params}: Props) {
         />
         <Controls rich={rich} interest={interest} rating={rating} />
 
-        {/* Providers */}
-        <ProvidersSection providers={rich.providers} />
+        {/* Seasons for TV */}
+        {mediaType === "tv" && <SeasonsSection seasons={rich.seasons} />}
 
         {/* Cast */}
         <CastSection cast={rich.cast} />
 
-        {/* Seasons for TV */}
-        {mediaType === "tv" && <SeasonsSection seasons={rich.seasons} />}
+        {/* Where to watch */}
+        <ProvidersSection providers={rich.providers} />
 
         {/* Discovery under details */}
         <RelatedGrid
