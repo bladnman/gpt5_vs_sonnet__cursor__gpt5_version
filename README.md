@@ -2,7 +2,30 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Environment Setup
+
+1. **Copy the environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Get a TMDB API key:**
+   - Visit [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
+   - Create an account if you don't have one
+   - Generate an API key (v3) or Access Token (v4 - recommended)
+   - Add your key/token to the `.env` file:
+     ```
+     TMDB_API_KEY="your_api_key_here"
+     # OR (recommended)
+     TMDB_V4_TOKEN="your_access_token_here"
+     ```
+
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+4. **Run the development server:**
 
 ```bash
 npm run dev
